@@ -209,10 +209,10 @@ function doPost_(e) {
     const hora = Utilities.formatDate(ahora, TZ, 'dd/MM HH:mm:ss');
     const posicion = estado === 'Adentro' ? pos : pos - cupo;
     const enviado = enviar_(email, 'Inscripción confirmada · ' + d.categoria, [
-      ['Torneo', nombreTorneo_(d)], ['Categoría', d.categoria], ['Pareja', j1 + ' – ' + j2],
+      ['Categoría', d.categoria], ['Pareja', j1 + ' – ' + j2],
       ['Estado', estado === 'Adentro' ? 'Adentro · pareja n.º ' + posicion : 'Lista de espera · lugar ' + posicion],
       ['Registrada', hora + ' hs'], ['Disponibilidad', dispTxt],
-    ], codigo);
+    ], codigo, d, t);
     return json_({ ok: true, estado, posicion, hora, email, enviado });
   } finally {
     lock.releaseLock();
@@ -251,12 +251,12 @@ function gestionar_(d) {
       sh.getRange(r._fila, COLS_I.indexOf('baja') + 1).setValue('x (web ' + cuando + ')');
       SpreadsheetApp.flush();
       recalcular_();
-      enviar_(email, 'Baja registrada · ' + r.categoria, [['Torneo', nombreTorneo_(d)], ['Categoría', r.categoria], ['Pareja', pareja], ['Baja', cuando + ' hs']]);
+      enviar_(email, 'Baja registrada · ' + r.categoria, [['Categoría', r.categoria], ['Pareja', pareja], ['Baja', cuando + ' hs']], '', d, t);
       return json_({ ok: true, accion: 'baja', pareja, categoria: r.categoria });
     }
     const dispTxt = disp.length === FRANJAS.length ? 'Completa' : disp.join(' / ');
     sh.getRange(r._fila, COLS_I.indexOf('disponibilidad') + 1).setValue(dispTxt);
-    enviar_(email, 'Horarios actualizados · ' + r.categoria, [['Torneo', nombreTorneo_(d)], ['Categoría', r.categoria], ['Pareja', pareja], ['Nueva disponibilidad', dispTxt]], r.codigo);
+    enviar_(email, 'Horarios actualizados · ' + r.categoria, [['Categoría', r.categoria], ['Pareja', pareja], ['Nueva disponibilidad', dispTxt]], r.codigo, d, t);
     return json_({ ok: true, accion: 'disponibilidad', pareja, categoria: r.categoria, disponibilidad: dispTxt });
   } finally {
     lock.releaseLock();
@@ -268,9 +268,10 @@ function reenviar_(d) {
   const email = mail_(d.email);
   if (!email) return json_({ ok: false, error: 'datos' });
   const filas = leer_(H_INSC).filas.filter((x) => x.torneo === d.torneo && !String(x.baja).trim() && String(x.email).toLowerCase() === email);
+  const T = leer_(H_TORNEOS).filas.find((x) => x.torneo === d.torneo);
   filas.slice(0, 5).forEach((r) => enviar_(email, 'Tu código de inscripción · ' + r.categoria, [
-    ['Torneo', nombreTorneo_(d)], ['Categoría', r.categoria], ['Pareja', r.jugador_1 + ' – ' + r.jugador_2], ['Disponibilidad', r.disponibilidad],
-  ], r.codigo));
+    ['Categoría', r.categoria], ['Pareja', r.jugador_1 + ' – ' + r.jugador_2], ['Disponibilidad', r.disponibilidad],
+  ], r.codigo, d, T));
   return json_({ ok: true }); // no dice si existe o no, para no revelar inscripciones ajenas
 }
 
@@ -288,8 +289,32 @@ function codigo_() {
   return c;
 }
 
+function txt_(v, n) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n || 200); }
+
 function nombreTorneo_(d) {
-  return String(d.torneo_nombre || d.torneo || '').replace(/[<>]/g, '').slice(0, 120);
+  const i = d.torneo_info || {};
+  return i.titulo ? txt_(i.titulo, 80) : txt_(d.torneo_nombre || d.torneo, 120);
+}
+
+/** Datos del torneo tal como figuran en la tarjeta/flyer de la página. */
+function bloqueTorneo_(d, t) {
+  const i = d.torneo_info || {};
+  const filas = [];
+  if (i.fecha) filas.push(['Fecha', txt_(i.fecha, 80).toLowerCase().replace(/^./, (c) => c.toUpperCase())]);
+  if (i.lugar) filas.push(['', txt_(i.lugar, 120)]);
+  (Array.isArray(i.datos) ? i.datos : []).slice(0, 8).forEach((x) => {
+    const s = txt_(x, 240), k = s.indexOf(':');
+    filas.push(k > 0 && k < 40 ? [s.slice(0, k), s.slice(k + 1).trim()] : ['', s]);
+  });
+  if (i.precio) filas.push(['Inscripción', txt_(i.precio, 60)]);
+  if (t && t.cierre) {
+    const c = fecha_(t.cierre);
+    const dia = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][Number(Utilities.formatDate(c, TZ, 'u')) % 7];
+    filas.push(['Cierre de inscripción', dia + ' ' + Utilities.formatDate(c, TZ, "dd/MM 'a las' HH:mm 'hs'")]);
+  }
+  filas.push(['Disponibilidad horaria', 'Viernes 14 a 00 hs · Sábado mañana 9 a 13 hs · Sábado siesta/tarde 13 a 18 hs · Sábado noche 18 a 00 hs. Domingo: llaves finales.']);
+  const flyer = /^https:\/\/ramirezpadelclub\.netlify\.app\/fotos\/torneos\/[\w-]+\.jpg$/.test(String(i.flyer || '')) ? i.flyer : '';
+  return { filas, flyer };
 }
 
 function esc_(s) {
@@ -297,20 +322,30 @@ function esc_(s) {
 }
 
 /** Manda el correo. Si falla (por ejemplo, cupo diario de Gmail), la inscripción igual queda hecha. */
-function enviar_(to, asunto, filas, codigo) {
+function enviar_(to, asunto, filas, codigo, d, t) {
   try {
-    const tabla = filas.map((f) => '<tr><td style="padding:6px 12px 6px 0;color:#4D6357">' + esc_(f[0]) +
-      '</td><td style="padding:6px 0;font-weight:700;color:#10231A">' + esc_(f[1]) + '</td></tr>').join('');
-    const cod = codigo ? '<p style="margin:22px 0 6px;color:#4D6357">Tu código para darte de baja o cambiar horarios:</p>' +
-      '<p style="font:700 30px/1 monospace;letter-spacing:6px;color:#037841;margin:0 0 6px">' + esc_(codigo) + '</p>' +
-      '<p style="margin:0;color:#4D6357;font-size:13px">Guardalo. Junto con este email, es lo que te piden en la página para hacer cambios (hasta el martes anterior al torneo, 18 hs).</p>' : '';
-    const html = '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;border:1px solid #D5E3DA;border-radius:16px;overflow:hidden">' +
+    const tabla = (fs) => '<table style="border-collapse:collapse;font-size:15px;width:100%">' + fs.map((f) =>
+      '<tr><td style="padding:7px 12px 7px 0;color:#4D6357;vertical-align:top;white-space:nowrap">' + esc_(f[0]) +
+      '</td><td style="padding:7px 0;font-weight:700;color:#10231A">' + esc_(f[1]) + '</td></tr>').join('') + '</table>';
+    const tor = d ? bloqueTorneo_(d, t) : { filas: [], flyer: '' };
+    const cod = codigo ?
+      '<div style="margin:22px 0 0;padding:18px;border:2px dashed #037841;border-radius:14px;background:#F6F8F5">' +
+      '<p style="margin:0 0 8px;color:#10231A;font-weight:700">Tu código de 6 caracteres</p>' +
+      '<p style="font:700 32px/1 monospace;letter-spacing:8px;color:#037841;margin:0 0 10px">' + esc_(codigo) + '</p>' +
+      '<p style="margin:0;color:#4D6357;font-size:14px;line-height:1.5">Este código <b>solo lo vas a necesitar si tienen que darse de baja del torneo o cambiar la disponibilidad horaria</b>. ' +
+      'Se hace desde la página, en el botón <b>“Baja o cambiar horarios”</b> del torneo, poniendo este email y el código. ' +
+      'Se puede hasta el martes anterior al torneo a las 18 hs. No lo compartas: con este código cualquiera podría dar de baja a la pareja.</p></div>' : '';
+    const html = '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #D5E3DA;border-radius:16px;overflow:hidden">' +
       '<div style="background:#024A29;color:#fff;padding:18px 22px;font:700 18px Arial">Complejo Ramirez Padel Club</div>' +
-      '<div style="padding:22px"><h2 style="margin:0 0 14px;color:#024A29;font-size:20px">' + esc_(asunto.split(' · ')[0]) + '</h2>' +
-      '<table style="border-collapse:collapse;font-size:15px">' + tabla + '</table>' + cod +
-      '<p style="margin:22px 0 0"><a href="' + WEB + '" style="background:#037841;color:#fff;padding:11px 18px;border-radius:999px;text-decoration:none;font-weight:700">Ver torneos</a></p>' +
+      '<div style="padding:22px"><h2 style="margin:0 0 6px;color:#024A29;font-size:22px">' + esc_(asunto.split(' · ')[0]) + '</h2>' +
+      (d ? '<p style="margin:0 0 16px;color:#4D6357;font-size:15px">' + esc_(nombreTorneo_(d)) + '</p>' : '') +
+      '<h3 style="margin:18px 0 6px;font-size:16px;color:#037841">Tu inscripción</h3>' + tabla(filas) + cod +
+      (tor.filas.length ? '<h3 style="margin:24px 0 6px;font-size:16px;color:#037841">El torneo</h3>' + tabla(tor.filas) : '') +
+      (tor.flyer ? '<p style="margin:18px 0 0;text-align:center"><img src="' + tor.flyer + '" alt="Flyer del torneo" style="width:100%;max-width:360px;border-radius:12px"></p>' : '') +
+      '<p style="margin:22px 0 0"><a href="' + WEB + '" style="background:#037841;color:#fff;padding:11px 18px;border-radius:999px;text-decoration:none;font-weight:700">Ver torneos en la página</a></p>' +
+      '<p style="margin:18px 0 0;color:#4D6357;font-size:13px">Cualquier consulta, escribinos por WhatsApp al complejo.</p>' +
       '</div></div>';
-    MailApp.sendEmail({ to: to, subject: asunto, htmlBody: html, name: 'Complejo Ramirez Padel Club' });
+    MailApp.sendEmail({ to: to, subject: asunto + ' · ' + nombreTorneo_(d || {}), htmlBody: html, name: 'Complejo Ramirez Padel Club' });
     return true;
   } catch (err) {
     console.error(err);

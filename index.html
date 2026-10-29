@@ -533,6 +533,8 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
   function f(iso){if(!iso)return'';var d=new Date(iso+'-03:00');return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+' hs'}
   function dispOk(vals){var sab=vals.filter(function(v){return v.indexOf('Sábado')===0}).length;return vals.some(function(v){return v.indexOf('Viernes')===0})||sab>=2}
   form.addEventListener('change',function(e){if(e.target.name==='disp')err.hidden=true});
+  function infoT(id){var c=document.querySelector('.torneo[data-id="'+id+'"]');if(!c)return{};var q=function(sel){var e=c.querySelector(sel);return e?e.textContent.trim():''};var img=c.querySelector('img');
+    return{titulo:q('h3'),fecha:q('.t-fecha'),lugar:q('.t-lugar'),datos:[].map.call(c.querySelectorAll('.t-datos li'),function(li){return li.textContent.trim()}),precio:q('.t-precio'),flyer:img?img.src:''}}
   function nombreT(id){var c=document.querySelector('.torneo[data-id="'+id+'"]');return c?c.querySelector('h3').textContent+' · '+c.querySelector('.t-fecha').textContent.toLowerCase():id}
   function cats(id){return datos?datos.categorias.filter(function(c){return c.torneo===id}):[]}
   function pintar(){
@@ -567,7 +569,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
   document.addEventListener('click',function(ev){
     if(ev.target.closest('[data-reenviar]')){ev.preventDefault();var em=String(gform.querySelector('[name=email]').value).trim();
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){gerr.textContent='Escribí primero el email con el que se inscribieron.';gerr.hidden=false;return}
-      fetch(INSC_URL,{method:'POST',body:JSON.stringify({accion:'reenviar',torneo:actual,torneo_nombre:nombreT(actual),email:em})}).catch(function(){});
+      fetch(INSC_URL,{method:'POST',body:JSON.stringify({accion:'reenviar',torneo:actual,torneo_nombre:nombreT(actual),torneo_info:infoT(actual),email:em})}).catch(function(){});
       gerr.textContent='Si hay una inscripción con ese email en este torneo, te reenviamos el código. Fijate en tu correo (y en spam).';gerr.hidden=false;return}
     if(ev.target.closest('[data-reintentar]')){falla=false;pintar();cargar();return}
     var b=ev.target.closest('[data-insc]');
@@ -586,7 +588,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
   gform.addEventListener('change',function(e){if(e.target.name==='accion'){delete gbtn.dataset.confirma;gerr.hidden=true}if(e.target.name==='accion'){var baja=e.target.value==='baja';gfr.hidden=baja;gbtn.textContent=baja?'Darnos de baja':'Guardar cambios'}});
   gform.addEventListener('submit',function(ev){
     ev.preventDefault();gerr.hidden=true;
-    var fd=new FormData(gform);var d={torneo:actual,torneo_nombre:nombreT(actual),email:fd.get('email'),codigo:String(fd.get('codigo')||'').toUpperCase().trim(),accion:fd.get('accion'),disponibilidad:fd.getAll('gdisp')};
+    var fd=new FormData(gform);var d={torneo:actual,torneo_nombre:nombreT(actual),torneo_info:infoT(actual),email:fd.get('email'),codigo:String(fd.get('codigo')||'').toUpperCase().trim(),accion:fd.get('accion'),disponibilidad:fd.getAll('gdisp')};
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(d.email).trim())){gerr.textContent='Revisá el email.';gerr.hidden=false;return}
     if(d.codigo.replace(/[^A-Z0-9]/g,'').length!==6){gerr.textContent='El código tiene 6 letras y números.';gerr.hidden=false;return}
     if(d.accion==='disponibilidad'&&!dispOk(d.disponibilidad)){gerr.textContent='Elijan al menos dos franjas del sábado, o el viernes completo.';gerr.hidden=false;return}
@@ -614,7 +616,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
     if(palabras(d.jugador_1)<2||palabras(d.jugador_2)<2){err.textContent='Poné apellido y nombre de los dos jugadores.';err.hidden=false;return}
     if(String(d.telefono).replace(/\D/g,'').length<8){err.textContent='Revisá el número de WhatsApp.';err.hidden=false;return}
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(d.email||'').trim())){err.textContent='Revisá el email: ahí te llega la confirmación.';err.hidden=false;return}
-    d.torneo_nombre=nombreT(actual);
+    d.torneo_nombre=nombreT(actual);d.torneo_info=infoT(actual);
     if(!dispOk(d.disponibilidad)){err.textContent='Elijan al menos dos franjas del sábado, o el viernes completo.';err.hidden=false;return}
     var btn=document.getElementById('insc-enviar');btn.disabled=true;btn.textContent='Enviando…';
     fetch(INSC_URL,{method:'POST',body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){
