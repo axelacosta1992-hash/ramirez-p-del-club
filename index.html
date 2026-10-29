@@ -145,6 +145,28 @@ section.blanca{background:var(--blanco)}
 .t-vacio{background:var(--blanco);border:1px solid var(--linea);border-radius:20px;padding:28px;color:var(--tinta-2)}
 @media (max-width:900px){.torneos{grid-template-columns:1fr}}
 @media (max-width:480px){.torneo{grid-template-columns:96px 1fr;gap:14px;padding:14px}.torneo h3{font-size:19px}}
+.t-estado{font-size:13px;font-weight:800;color:var(--verde-osc);background:var(--verde-claro);border-radius:999px;padding:5px 12px;justify-self:start;align-self:flex-start}
+.t-estado.off{background:#F1EFEA;color:var(--tinta-2)}
+.t-cats{display:grid;gap:6px;font-size:14px}
+.t-cats details{border:1px solid var(--linea);border-radius:12px;padding:8px 12px}
+.t-cats summary{cursor:pointer;font-weight:700;color:var(--verde-osc);display:flex;justify-content:space-between;gap:10px}
+.t-cats ol{margin:8px 0 2px;padding-left:22px;color:var(--tinta-2);display:grid;gap:3px}
+.t-cats li small{color:var(--tinta-2);font-variant-numeric:tabular-nums;margin-left:6px}
+.t-cats li.esp{color:#9A6B12}
+.torneo.prueba{border:2px dashed var(--verde)}
+dialog.insc{border:0;border-radius:22px;padding:0;width:min(460px,calc(100vw - 32px));box-shadow:0 30px 80px rgba(0,0,0,.3)}
+dialog.insc::backdrop{background:rgba(16,35,26,.55)}
+.insc form,.insc .res{padding:26px;display:grid;gap:14px}
+.insc h3{font-size:24px;color:var(--verde-osc)}
+.insc label{display:grid;gap:5px;font-weight:700;font-size:14px}
+.insc input,.insc select{font:500 16px var(--texto);padding:11px 13px;border:1.5px solid var(--linea);border-radius:12px;background:var(--blanco);color:var(--tinta);width:100%}
+.insc input:focus,.insc select:focus{outline:2px solid var(--verde);border-color:var(--verde)}
+.insc .ayuda{font-size:13px;color:var(--tinta-2);font-weight:500}
+.insc .err{color:#B3261E;font-weight:700;font-size:14px}
+.insc .acciones{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.insc .trampa{position:absolute;left:-9999px}
+.insc .res p{color:var(--tinta-2)}
+.insc .res b.big{font-family:var(--display);font-size:28px;color:var(--verde)}
 @media (max-width:760px){.canchas,.extras{grid-template-columns:1fr}}
 
 /* Fotos */
@@ -374,7 +396,17 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
         <p>Los torneos que se vienen en el complejo. Para anotarte tocá "Inscribirme" y te contestamos por WhatsApp.</p>
       </div>
       <div class="torneos" id="lista-torneos">
-        <article class="torneo" data-fin="2026-11-15">
+        <article class="torneo prueba" data-id="prueba" data-fin="2099-12-31" hidden>
+          <img src="fotos/torneos/t-1315nov.jpg" alt="" loading="lazy" width="719" height="1280">
+          <div class="t-info">
+            <p class="t-fecha">PRUEBA · SOLO VISIBLE CON EL LINK DE PRUEBA</p>
+            <h3>Torneo de prueba</h3>
+            <p class="t-lugar">Para probar la inscripción antes de usarla en serio</p>
+            <ul class="t-datos"><li><b>Abre:</b> jueves 29/10 a las 11:30</li><li><b>Cupo:</b> 2 parejas por categoría (la tercera pasa a lista de espera)</li></ul>
+            <div class="t-pie"><button type="button" class="btn verde" data-insc>Inscribirme</button></div>
+          </div>
+        </article>
+        <article class="torneo" data-id="t-1315nov" data-fin="2026-11-15">
           <img src="fotos/torneos/t-1315nov.jpg" alt="Flyer: Torneo del complejo, 13 · 14 · 15 de noviembre" loading="lazy" width="719" height="1280">
           <div class="t-info">
             <p class="t-fecha">13 · 14 · 15 DE NOVIEMBRE</p>
@@ -384,7 +416,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
             <div class="t-pie"><span class="t-precio">$30.000 por jugador</span><a class="btn verde" href="https://wa.me/5493434522912?text=Hola%21%20Quiero%20inscribirme%20al%20torneo%20del%2013%2C%2014%20y%2015%20de%20noviembre." target="_blank" rel="noopener">Inscribirme</a></div>
           </div>
         </article>
-        <article class="torneo" data-fin="2026-11-22">
+        <article class="torneo" data-id="master-2022nov" data-fin="2026-11-22">
           <img src="fotos/torneos/master-2022nov.jpg" alt="Flyer: Máster Final · Ramirez Pádel Tour, 20 · 21 · 22 de noviembre" loading="lazy" width="719" height="1280">
           <div class="t-info">
             <p class="t-fecha">20 · 21 · 22 DE NOVIEMBRE</p>
@@ -394,7 +426,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
             <div class="t-pie"><span class="t-precio">$30.000 por jugador</span><a class="btn verde" href="https://wa.me/5493434522912?text=Hola%21%20Quiero%20inscribirme%20al%20M%C3%A1ster%20Final%20del%20Ramirez%20P%C3%A1del%20Tour%20del%2020%2C%2021%20y%2022%20de%20noviembre." target="_blank" rel="noopener">Inscribirme</a><a class="btn copiar" href="tour.html#ranking">Ver ranking</a></div>
           </div>
         </article>
-        <article class="torneo" data-fin="2026-11-22">
+        <article class="torneo" data-id="8dam-2022nov" data-fin="2026-11-22">
           <img src="fotos/torneos/8dam-2022nov.jpg" alt="Flyer: Torneo 8° Damas, 20 · 21 · 22 de noviembre" loading="lazy" width="719" height="1280">
           <div class="t-info">
             <p class="t-fecha">20 · 21 · 22 DE NOVIEMBRE</p>
@@ -404,7 +436,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
             <div class="t-pie"><span class="t-precio">$30.000 por jugador</span><a class="btn verde" href="https://wa.me/5493434522912?text=Hola%21%20Quiero%20inscribirme%20al%20torneo%20de%208%C2%B0%20Damas%20del%2020%2C%2021%20y%2022%20de%20noviembre." target="_blank" rel="noopener">Inscribirme</a></div>
           </div>
         </article>
-        <article class="torneo" data-fin="2026-11-29">
+        <article class="torneo" data-id="master-2729nov" data-fin="2026-11-29">
           <img src="fotos/torneos/master-2729nov.jpg" alt="Flyer: Máster Final · Ramirez Pádel Tour, 27 · 28 · 29 de noviembre" loading="lazy" width="719" height="1280">
           <div class="t-info">
             <p class="t-fecha">27 · 28 · 29 DE NOVIEMBRE</p>
@@ -414,7 +446,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
             <div class="t-pie"><span class="t-precio">$30.000 por jugador</span><a class="btn verde" href="https://wa.me/5493434522912?text=Hola%21%20Quiero%20inscribirme%20al%20M%C3%A1ster%20Final%20del%20Ramirez%20P%C3%A1del%20Tour%20del%2027%2C%2028%20y%2029%20de%20noviembre." target="_blank" rel="noopener">Inscribirme</a><a class="btn copiar" href="tour.html#ranking">Ver ranking</a></div>
           </div>
         </article>
-        <article class="torneo" data-fin="2026-11-29">
+        <article class="torneo" data-id="8cab-2729nov" data-fin="2026-11-29">
           <img src="fotos/torneos/8cab-2729nov.jpg" alt="Flyer: Torneo 8° Caballeros, 27 · 28 · 29 de noviembre" loading="lazy" width="719" height="1280">
           <div class="t-info">
             <p class="t-fecha">27 · 28 · 29 DE NOVIEMBRE</p>
@@ -433,6 +465,87 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
 (function(){var hoy=new Date();var n=0;document.querySelectorAll('#lista-torneos .torneo').forEach(function(t){var f=new Date(t.dataset.fin+'T23:59:59-03:00');if(f<hoy){t.remove()}else n++});if(!n)document.getElementById('torneos-vacio').hidden=false;})();
 </script>
 
+
+<dialog class="insc" id="insc">
+  <form id="insc-form" novalidate>
+    <h3 id="insc-tit">Inscripción</h3>
+    <label>Categoría<select name="categoria" id="insc-cat" required></select></label>
+    <label>Jugador/a 1<input name="jugador_1" autocomplete="off" placeholder="Apellido Nombre" required><span class="ayuda">Ej.: Acosta Axel</span></label>
+    <label>Jugador/a 2<input name="jugador_2" autocomplete="off" placeholder="Apellido Nombre" required></label>
+    <label>WhatsApp de contacto<input name="telefono" type="tel" inputmode="tel" placeholder="343 4xxxxxx" required><span class="ayuda">Solo lo ve la organización, no aparece en la lista.</span></label>
+    <label class="trampa" aria-hidden="true">Web<input name="web" tabindex="-1" autocomplete="off"></label>
+    <p class="err" id="insc-err" hidden></p>
+    <div class="acciones"><button type="button" class="btn copiar" data-cerrar>Cancelar</button><button type="submit" class="btn verde" id="insc-enviar">Inscribirnos</button></div>
+  </form>
+  <div class="res" id="insc-res" hidden></div>
+</dialog>
+<script>
+(function(){
+  /* URL del Apps Script publicado (la planilla de inscripciones). */
+  var INSC_URL='';
+  var prueba=/[?&]prueba\b/.test(location.search);
+  var tPrueba=document.querySelector('.torneo.prueba');
+  if(prueba&&tPrueba) tPrueba.hidden=false;
+  var datos=null, actual=null;
+  var dlg=document.getElementById('insc'), form=document.getElementById('insc-form'), res=document.getElementById('insc-res'), err=document.getElementById('insc-err'), sel=document.getElementById('insc-cat');
+  function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
+  function f(iso){if(!iso)return'';var d=new Date(iso+'-03:00');return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+' hs'}
+  function cats(id){return datos?datos.categorias.filter(function(c){return c.torneo===id}):[]}
+  function pintar(){
+    document.querySelectorAll('.torneo [data-insc]').forEach(function(btn){
+      var card=btn.closest('.torneo'), id=card.dataset.id, cs=cats(id);
+      var box=card.querySelector('.t-insc');
+      if(!box){box=document.createElement('div');box.className='t-insc';box.style.cssText='display:grid;gap:10px';card.querySelector('.t-pie').before(box)}
+      if(!INSC_URL){box.innerHTML='<span class="t-estado off">Falta conectar la planilla</span>';btn.disabled=true;return}
+      if(!cs.length){box.innerHTML='<span class="t-estado off">Inscripción no disponible</span>';btn.hidden=true;return}
+      var e=cs[0].estado, txt={abierta:'Inscripción abierta'+(cs[0].cierre?' · cierra '+f(cs[0].cierre):''),antes:'Abre '+f(cs[0].apertura),cerrada:'Inscripción cerrada',pronto:'La inscripción abre pronto'}[e];
+      var h='<span class="t-estado'+(e==='abierta'?'':' off')+'">'+txt+'</span><div class="t-cats">';
+      cs.forEach(function(c){
+        var adentro=c.inscriptos.filter(function(i){return!i.espera}).length, esp=c.inscriptos.length-adentro;
+        h+='<details><summary><span>'+esc(c.categoria)+'</span><span>'+adentro+(c.cupo?'/'+c.cupo:'')+(esp?' · '+esp+' en espera':'')+'</span></summary>';
+        h+=c.inscriptos.length?'<ol>'+c.inscriptos.map(function(i){return'<li'+(i.espera?' class="esp"':'')+'>'+esc(i.pareja)+'<small>'+esc(i.hora)+(i.espera?' · espera':'')+'</small></li>'}).join('')+'</ol>':'<p style="margin:6px 0 0;color:var(--tinta-2)">Todavía no hay inscriptos.</p>';
+        h+='</details>'});
+      box.innerHTML=h+'</div>';
+      btn.disabled=e!=='abierta';btn.hidden=false;
+      if(e==='antes'&&!pintar.t){var ms=new Date(cs[0].apertura+'-03:00')-Date.now()+1500;if(ms<6*36e5){pintar.t=setTimeout(function(){pintar.t=0;cargar()},Math.max(ms,1000))}}
+    });
+  }
+  function cargar(){
+    if(!INSC_URL){pintar();return Promise.resolve()}
+    return fetch(INSC_URL).then(function(r){return r.json()}).then(function(j){datos=j;pintar()}).catch(function(){pintar()});
+  }
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest('[data-insc]');
+    if(b){var card=b.closest('.torneo');actual=card.dataset.id;
+      document.getElementById('insc-tit').textContent=card.querySelector('h3').textContent;
+      sel.innerHTML=cats(actual).map(function(c){return'<option>'+esc(c.categoria)+'</option>'}).join('');
+      form.reset();err.hidden=true;form.hidden=false;res.hidden=true;dlg.showModal();return}
+    if(ev.target.closest('[data-cerrar]')){dlg.close()}
+  });
+  form.addEventListener('submit',function(ev){
+    ev.preventDefault();err.hidden=true;
+    var d=Object.fromEntries(new FormData(form));d.torneo=actual;
+    var palabras=function(x){return String(x||'').trim().split(/\s+/).filter(Boolean).length};
+    if(palabras(d.jugador_1)<2||palabras(d.jugador_2)<2){err.textContent='Poné apellido y nombre de los dos jugadores.';err.hidden=false;return}
+    if(String(d.telefono).replace(/\D/g,'').length<8){err.textContent='Revisá el número de WhatsApp.';err.hidden=false;return}
+    var btn=document.getElementById('insc-enviar');btn.disabled=true;btn.textContent='Enviando…';
+    fetch(INSC_URL,{method:'POST',body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){
+      if(j.ok){
+        res.innerHTML=j.estado==='Adentro'
+          ?'<h3>¡Listo, quedaron inscriptos!</h3><b class="big">Pareja n.º '+j.posicion+'</b><p>'+esc(d.categoria)+' · registrada el '+esc(j.hora)+'</p><p>La organización se va a comunicar por WhatsApp.</p>'
+          :'<h3>Quedaron en lista de espera</h3><b class="big">Lugar '+j.posicion+'</b><p>El cupo de '+esc(d.categoria)+' ya está completo. Si se libera un lugar, les avisamos por WhatsApp.</p>';
+        res.innerHTML+='<div class="acciones"><button type="button" class="btn verde" data-cerrar>Cerrar</button></div>';
+        form.hidden=true;res.hidden=false;cargar();
+      }else{
+        var m={duplicado:(j.jugador||'Ese jugador')+' ya está inscripto en esta categoría.',iguales:'Los dos jugadores no pueden ser la misma persona.',antes:'La inscripción todavía no abrió.',pronto:'La inscripción todavía no abrió.',cerrada:'La inscripción ya cerró.',datos:'Revisá los datos: apellido y nombre de los dos y un WhatsApp.',categoria:'Elegí una categoría.'}[j.error]||'No se pudo inscribir. Probá de nuevo.';
+        err.textContent=m;err.hidden=false;
+      }
+    }).catch(function(){err.textContent='No se pudo conectar. Revisá la conexión y probá de nuevo.';err.hidden=false})
+    .finally(function(){btn.disabled=false;btn.textContent='Inscribirnos'});
+  });
+  cargar();
+})();
+</script>
 <!-- FOTOS -->
 <main class="vista" id="v-fotos" hidden>
   <section>
