@@ -527,7 +527,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
   var prueba=/[?&]prueba\b/.test(location.search);
   var tPrueba=document.querySelector('.torneo.prueba');
   if(prueba&&tPrueba) tPrueba.hidden=false;
-  var datos=null, actual=null;
+  var datos=null, actual=null, falla=false;
   var dlg=document.getElementById('insc'), form=document.getElementById('insc-form'), res=document.getElementById('insc-res'), err=document.getElementById('insc-err'), sel=document.getElementById('insc-cat');
   function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
   function f(iso){if(!iso)return'';var d=new Date(iso+'-03:00');return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+' hs'}
@@ -540,6 +540,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
       var box=card.querySelector('.t-insc');
       if(!box){box=document.createElement('div');box.className='t-insc';box.style.cssText='display:grid;gap:10px';card.querySelector('.t-pie').before(box)}
       if(!INSC_URL){box.innerHTML='<span class="t-estado off">Falta conectar la planilla</span>';btn.disabled=true;var gb0=card.querySelector('[data-gest]');if(gb0)gb0.hidden=true;return}
+      if(!datos){box.innerHTML=falla?'<span class="t-estado off">No se pudo cargar la inscripción</span> <button type="button" class="btn copiar" style="padding:6px 14px;font-size:13px" data-reintentar>Reintentar</button>':'<span class="t-estado off">Cargando inscripción…</span>';btn.disabled=true;var gb1=card.querySelector('[data-gest]');if(gb1)gb1.hidden=true;return}
       if(!cs.length){box.innerHTML='<span class="t-estado off">Inscripción no disponible</span>';btn.hidden=true;return}
       var e=cs[0].estado, txt={abierta:'Inscripción abierta'+(cs[0].cierre?' · cierra '+f(cs[0].cierre):''),antes:'Abre '+f(cs[0].apertura),cerrada:'Inscripción cerrada',pronto:'La inscripción abre pronto'}[e];
       var h='<span class="t-estado'+(e==='abierta'?'':' off')+'">'+txt+'</span><div class="t-cats">';
@@ -556,9 +557,14 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
   }
   function cargar(){
     if(!INSC_URL){pintar();return Promise.resolve()}
-    return fetch(INSC_URL).then(function(r){return r.json()}).then(function(j){datos=j;pintar()}).catch(function(){pintar()});
+    var intento=function(n){
+      return fetch(INSC_URL+(INSC_URL.indexOf('?')<0?'?':'&')+'t='+Date.now()).then(function(r){return r.json()}).then(function(j){if(!j||!j.ok)throw 0;datos=j;falla=false;pintar()})
+        .catch(function(){if(n<3)return new Promise(function(ok){setTimeout(ok,1500*(n+1))}).then(function(){return intento(n+1)});falla=true;pintar()});
+    };
+    return intento(0);
   }
   document.addEventListener('click',function(ev){
+    if(ev.target.closest('[data-reintentar]')){falla=false;pintar();cargar();return}
     var b=ev.target.closest('[data-insc]');
     if(b){var card=b.closest('.torneo');actual=card.dataset.id;
       document.getElementById('insc-tit').textContent=card.querySelector('h3').textContent;
