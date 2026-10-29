@@ -15,7 +15,8 @@ const TZ = 'America/Argentina/Buenos_Aires';
 const H_TORNEOS = 'Torneos';
 const H_INSC = 'Inscripciones';
 const COLS_T = ['torneo', 'categoria', 'cupo', 'apertura', 'cierre'];
-const COLS_I = ['fecha_hora', 'torneo', 'categoria', 'jugador_1', 'jugador_2', 'telefono', 'estado', 'baja', 'disponibilidad'];
+const COLS_I = ['fecha_hora', 'torneo', 'categoria', 'jugador_1', 'jugador_2', 'telefono', 'estado', 'baja', 'disponibilidad', 'email', 'codigo'];
+const WEB = 'https://ramirezpadelclub.netlify.app/#torneos';
 /** Regla del circuito: al menos dos franjas del sábado, o el viernes completo. */
 function dispValida_(disp) { return disp.some((f) => f.indexOf('Viernes') === 0) || disp.filter((f) => f.indexOf('Sábado') === 0).length >= 2; }
 const FRANJAS = ['Viernes 14 a 00 hs', 'Sábado mañana 9 a 13 hs', 'Sábado siesta/tarde 13 a 18 hs', 'Sábado noche 18 a 00 hs'];
@@ -168,11 +169,13 @@ function doPost_(e) {
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'datos' }); }
   if (d.web) return json_({ ok: true, estado: 'Adentro' }); // campo trampa anti-robots
   if (d.accion === 'baja' || d.accion === 'disponibilidad') return gestionar_(d);
+  if (d.accion === 'reenviar') return reenviar_(d);
 
   const j1 = limpio_(d.jugador_1), j2 = limpio_(d.jugador_2);
   const tel = String(d.telefono || '').replace(/[^\d+]/g, '').slice(0, 20);
   const disp = (Array.isArray(d.disponibilidad) ? d.disponibilidad : []).filter((f) => FRANJAS.includes(f));
-  if (j1.split(' ').length < 2 || j2.split(' ').length < 2 || tel.length < 8 || !dispValida_(disp)) {
+  const email = mail_(d.email);
+  if (j1.split(' ').length < 2 || j2.split(' ').length < 2 || tel.length < 8 || !dispValida_(disp) || !email) {
     return json_({ ok: false, error: 'datos' });
   }
 
@@ -200,13 +203,17 @@ function doPost_(e) {
     const estado = cupo && pos > cupo ? 'Lista de espera' : 'Adentro';
     asegurarColumnas_();
     const dispTxt = disp.length === FRANJAS.length ? 'Completa' : disp.join(' / ');
-    sh.appendRow([ahora, d.torneo, d.categoria, j1, j2, "'" + tel, estado, '', dispTxt]);
+    const codigo = codigo_();
+    sh.appendRow([ahora, d.torneo, d.categoria, j1, j2, "'" + tel, estado, '', dispTxt, email, codigo]);
     SpreadsheetApp.flush();
-    return json_({
-      ok: true, estado,
-      posicion: estado === 'Adentro' ? pos : pos - cupo,
-      hora: Utilities.formatDate(ahora, TZ, 'dd/MM HH:mm:ss'),
-    });
+    const hora = Utilities.formatDate(ahora, TZ, 'dd/MM HH:mm:ss');
+    const posicion = estado === 'Adentro' ? pos : pos - cupo;
+    const enviado = enviar_(email, 'Inscripción confirmada · ' + d.categoria, [
+      ['Torneo', nombreTorneo_(d)], ['Categoría', d.categoria], ['Pareja', j1 + ' – ' + j2],
+      ['Estado', estado === 'Adentro' ? 'Adentro · pareja n.º ' + posicion : 'Lista de espera · lugar ' + posicion],
+      ['Registrada', hora + ' hs'], ['Disponibilidad', dispTxt],
+    ], codigo);
+    return json_({ ok: true, estado, posicion, hora, email, enviado });
   } finally {
     lock.releaseLock();
   }
@@ -215,9 +222,9 @@ function doPost_(e) {
 /* ---------- baja o cambio de disponibilidad, hecho por la propia pareja ---------- */
 
 function gestionar_(d) {
-  const jug = limpio_(d.jugador);
-  const tel = String(d.telefono || '').replace(/\D/g, '');
-  if (jug.split(' ').length < 2 || tel.length < 8) return json_({ ok: false, error: 'datos' });
+  const email = mail_(d.email);
+  const cod = String(d.codigo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!email || cod.length !== 6) return json_({ ok: false, error: 'datos' });
   let disp = [];
   if (d.accion === 'disponibilidad') {
     disp = (Array.isArray(d.disponibilidad) ? d.disponibilidad : []).filter((f) => FRANJAS.includes(f));
@@ -227,17 +234,15 @@ function gestionar_(d) {
   lock.waitLock(20000);
   try {
     const ahora = new Date();
-    const t = leer_(H_TORNEOS).filas.find((x) => x.torneo === d.torneo && x.categoria === d.categoria);
+    const t = leer_(H_TORNEOS).filas.find((x) => x.torneo === d.torneo);
     if (!t) return json_({ ok: false, error: 'categoria' });
     const v = estadoVentana_(t, ahora);
     if (v !== 'abierta') return json_({ ok: false, error: v === 'cerrada' ? 'cerrada_gestion' : v });
 
     asegurarColumnas_();
     const { sh, filas } = leer_(H_INSC);
-    const n = norm_(jug), ult8 = tel.slice(-8);
-    const r = filas.find((x) => x.torneo === d.torneo && x.categoria === d.categoria && !String(x.baja).trim()
-      && [norm_(x.jugador_1), norm_(x.jugador_2)].includes(n)
-      && String(x.telefono).replace(/\D/g, '').slice(-8) === ult8);
+    const r = filas.find((x) => x.torneo === d.torneo && !String(x.baja).trim()
+      && String(x.email).toLowerCase() === email && String(x.codigo).toUpperCase() === cod);
     if (!r) return json_({ ok: false, error: 'no_encontrado' });
 
     const cuando = Utilities.formatDate(ahora, TZ, 'dd/MM HH:mm');
@@ -246,12 +251,74 @@ function gestionar_(d) {
       sh.getRange(r._fila, COLS_I.indexOf('baja') + 1).setValue('x (web ' + cuando + ')');
       SpreadsheetApp.flush();
       recalcular_();
-      return json_({ ok: true, accion: 'baja', pareja });
+      enviar_(email, 'Baja registrada · ' + r.categoria, [['Torneo', nombreTorneo_(d)], ['Categoría', r.categoria], ['Pareja', pareja], ['Baja', cuando + ' hs']]);
+      return json_({ ok: true, accion: 'baja', pareja, categoria: r.categoria });
     }
     const dispTxt = disp.length === FRANJAS.length ? 'Completa' : disp.join(' / ');
     sh.getRange(r._fila, COLS_I.indexOf('disponibilidad') + 1).setValue(dispTxt);
-    return json_({ ok: true, accion: 'disponibilidad', pareja, disponibilidad: dispTxt });
+    enviar_(email, 'Horarios actualizados · ' + r.categoria, [['Torneo', nombreTorneo_(d)], ['Categoría', r.categoria], ['Pareja', pareja], ['Nueva disponibilidad', dispTxt]], r.codigo);
+    return json_({ ok: true, accion: 'disponibilidad', pareja, categoria: r.categoria, disponibilidad: dispTxt });
   } finally {
     lock.releaseLock();
   }
+}
+
+/** Reenvía los códigos de las inscripciones activas de ese email en ese torneo (solo a ese email). */
+function reenviar_(d) {
+  const email = mail_(d.email);
+  if (!email) return json_({ ok: false, error: 'datos' });
+  const filas = leer_(H_INSC).filas.filter((x) => x.torneo === d.torneo && !String(x.baja).trim() && String(x.email).toLowerCase() === email);
+  filas.slice(0, 5).forEach((r) => enviar_(email, 'Tu código de inscripción · ' + r.categoria, [
+    ['Torneo', nombreTorneo_(d)], ['Categoría', r.categoria], ['Pareja', r.jugador_1 + ' – ' + r.jugador_2], ['Disponibilidad', r.disponibilidad],
+  ], r.codigo));
+  return json_({ ok: true }); // no dice si existe o no, para no revelar inscripciones ajenas
+}
+
+/* ---------- email ---------- */
+
+function mail_(s) {
+  const m = String(s || '').trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m) && m.length <= 100 ? m : '';
+}
+
+function codigo_() {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for (let i = 0; i < 6; i++) c += abc[Math.floor(Math.random() * abc.length)];
+  return c;
+}
+
+function nombreTorneo_(d) {
+  return String(d.torneo_nombre || d.torneo || '').replace(/[<>]/g, '').slice(0, 120);
+}
+
+function esc_(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Manda el correo. Si falla (por ejemplo, cupo diario de Gmail), la inscripción igual queda hecha. */
+function enviar_(to, asunto, filas, codigo) {
+  try {
+    const tabla = filas.map((f) => '<tr><td style="padding:6px 12px 6px 0;color:#4D6357">' + esc_(f[0]) +
+      '</td><td style="padding:6px 0;font-weight:700;color:#10231A">' + esc_(f[1]) + '</td></tr>').join('');
+    const cod = codigo ? '<p style="margin:22px 0 6px;color:#4D6357">Tu código para darte de baja o cambiar horarios:</p>' +
+      '<p style="font:700 30px/1 monospace;letter-spacing:6px;color:#037841;margin:0 0 6px">' + esc_(codigo) + '</p>' +
+      '<p style="margin:0;color:#4D6357;font-size:13px">Guardalo. Junto con este email, es lo que te piden en la página para hacer cambios (hasta el martes anterior al torneo, 18 hs).</p>' : '';
+    const html = '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;border:1px solid #D5E3DA;border-radius:16px;overflow:hidden">' +
+      '<div style="background:#024A29;color:#fff;padding:18px 22px;font:700 18px Arial">Complejo Ramirez Padel Club</div>' +
+      '<div style="padding:22px"><h2 style="margin:0 0 14px;color:#024A29;font-size:20px">' + esc_(asunto.split(' · ')[0]) + '</h2>' +
+      '<table style="border-collapse:collapse;font-size:15px">' + tabla + '</table>' + cod +
+      '<p style="margin:22px 0 0"><a href="' + WEB + '" style="background:#037841;color:#fff;padding:11px 18px;border-radius:999px;text-decoration:none;font-weight:700">Ver torneos</a></p>' +
+      '</div></div>';
+    MailApp.sendEmail({ to: to, subject: asunto, htmlBody: html, name: 'Complejo Ramirez Padel Club' });
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+/** Correr una vez a mano después de actualizar el código: pide el permiso para mandar emails. */
+function autorizarEmail() {
+  Logger.log('Emails disponibles hoy: ' + MailApp.getRemainingDailyQuota());
 }
