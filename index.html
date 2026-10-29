@@ -410,7 +410,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
             <h3>Torneo de prueba</h3>
             <p class="t-lugar">Para probar la inscripción antes de usarla en serio</p>
             <ul class="t-datos"><li><b>Abre:</b> jueves 29/10 a las 11:30</li><li><b>Cupo:</b> 2 parejas por categoría (la tercera pasa a lista de espera)</li></ul>
-            <div class="t-pie"><button type="button" class="btn verde" data-insc>Inscribirme</button></div>
+            <div class="t-pie"><button type="button" class="btn verde" data-insc>Inscribirme</button><button type="button" class="btn copiar" data-gest>Baja o cambiar horarios</button></div>
           </div>
         </article>
         <article class="torneo" data-id="t-1315nov" data-fin="2026-11-15">
@@ -473,6 +473,32 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
 </script>
 
 
+
+<dialog class="insc" id="gest">
+  <form id="gest-form" novalidate>
+    <h3 id="gest-tit">Baja o cambio de horarios</h3>
+    <p class="ayuda" style="margin:-6px 0 0">Poné los mismos datos que usaron al inscribirse. Se puede hasta el martes anterior al torneo a las 18 hs.</p>
+    <label>Categoría<select name="categoria" id="gest-cat" required></select></label>
+    <label>Uno de los jugadores<input name="jugador" autocomplete="off" placeholder="Apellido Nombre" required></label>
+    <label>WhatsApp que pusieron al inscribirse<input name="telefono" type="tel" inputmode="tel" placeholder="343 4xxxxxx" required></label>
+    <fieldset class="franjas">
+      <legend>¿Qué quieren hacer?</legend>
+      <label><input type="radio" name="accion" value="disponibilidad" checked><span>Cambiar la disponibilidad horaria</span></label>
+      <label><input type="radio" name="accion" value="baja"><span>Darnos de baja del torneo</span></label>
+    </fieldset>
+    <fieldset class="franjas" id="gest-franjas">
+      <legend>Nueva disponibilidad <span class="ayuda">(fase de zonas)</span></legend>
+      <p class="ayuda" style="margin:0">Al menos dos franjas del sábado, o el viernes completo.</p>
+      <label><input type="checkbox" name="gdisp" value="Viernes 14 a 00 hs"><span><b>Viernes</b> 14:00 a 00:00</span></label>
+      <label><input type="checkbox" name="gdisp" value="Sábado mañana 9 a 13 hs"><span><b>Sábado mañana</b> 9:00 a 13:00</span></label>
+      <label><input type="checkbox" name="gdisp" value="Sábado siesta/tarde 13 a 18 hs"><span><b>Sábado siesta/tarde</b> 13:00 a 18:00</span></label>
+      <label><input type="checkbox" name="gdisp" value="Sábado noche 18 a 00 hs"><span><b>Sábado noche</b> 18:00 a 00:00</span></label>
+    </fieldset>
+    <p class="err" id="gest-err" hidden></p>
+    <div class="acciones"><button type="button" class="btn copiar" data-cerrar>Cancelar</button><button type="submit" class="btn verde" id="gest-enviar">Guardar cambios</button></div>
+  </form>
+  <div class="res" id="gest-res" hidden></div>
+</dialog>
 <dialog class="insc" id="insc">
   <form id="insc-form" novalidate>
     <h3 id="insc-tit">Inscripción</h3>
@@ -482,11 +508,11 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
     <label>WhatsApp de contacto<input name="telefono" type="tel" inputmode="tel" placeholder="343 4xxxxxx" required><span class="ayuda">Solo lo ve la organización, no aparece en la lista.</span></label>
     <fieldset class="franjas">
       <legend>Disponibilidad horaria <span class="ayuda">(fase de zonas)</span></legend>
-      <label><input type="checkbox" name="disp" value="Viernes 14 a 00 hs" data-h="10"><span><b>Viernes</b> 14:00 a 00:00</span></label>
-      <label><input type="checkbox" name="disp" value="Sábado mañana 9 a 13 hs" data-h="4"><span><b>Sábado mañana</b> 9:00 a 13:00</span></label>
-      <label><input type="checkbox" name="disp" value="Sábado siesta/tarde 13 a 18 hs" data-h="5"><span><b>Sábado siesta/tarde</b> 13:00 a 18:00</span></label>
-      <label><input type="checkbox" name="disp" value="Sábado noche 18 a 00 hs" data-h="6"><span><b>Sábado noche</b> 18:00 a 00:00</span></label>
-      <p class="ayuda" id="disp-aviso">Marcá todas las franjas en las que pueden jugar. Los dos partidos de zona se juegan el mismo día. Mínimo 60% de disponibilidad; para pedir solo viernes tienen que poder toda la jornada. El domingo (llaves finales) no se piden horarios. Inscripciones, bajas y cambios de disponibilidad: hasta el martes anterior al torneo, 18 hs.</p>
+      <label><input type="checkbox" name="disp" value="Viernes 14 a 00 hs" ><span><b>Viernes</b> 14:00 a 00:00</span></label>
+      <label><input type="checkbox" name="disp" value="Sábado mañana 9 a 13 hs" ><span><b>Sábado mañana</b> 9:00 a 13:00</span></label>
+      <label><input type="checkbox" name="disp" value="Sábado siesta/tarde 13 a 18 hs" ><span><b>Sábado siesta/tarde</b> 13:00 a 18:00</span></label>
+      <label><input type="checkbox" name="disp" value="Sábado noche 18 a 00 hs" ><span><b>Sábado noche</b> 18:00 a 00:00</span></label>
+      <p class="ayuda" id="disp-aviso">Marquen todas las franjas en las que pueden jugar: <b>al menos dos franjas del sábado, o el viernes completo</b>. Los dos partidos de zona se juegan el mismo día. El domingo (llaves finales) no se piden horarios. Inscripciones, bajas y cambios de disponibilidad: hasta el martes anterior al torneo, 18 hs.</p>
     </fieldset>
     <label class="trampa" aria-hidden="true">Web<input name="web" tabindex="-1" autocomplete="off"></label>
     <p class="err" id="insc-err" hidden></p>
@@ -505,16 +531,15 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
   var dlg=document.getElementById('insc'), form=document.getElementById('insc-form'), res=document.getElementById('insc-res'), err=document.getElementById('insc-err'), sel=document.getElementById('insc-cat');
   function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
   function f(iso){if(!iso)return'';var d=new Date(iso+'-03:00');return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+' hs'}
-  function dispOk(){var c=[].slice.call(form.querySelectorAll('[name=disp]:checked')),h=c.reduce(function(a,x){return a+(+x.dataset.h)},0);if(!c.length)return true;var soloVie=c.length===1&&c[0].value.indexOf('Viernes')===0;return soloVie||h>=15}
-  var avBase=document.getElementById('disp-aviso');avBase.dataset.base=avBase.textContent;
-  form.addEventListener('change',function(e){if(e.target.name!=='disp')return;err.hidden=true;var ok=dispOk();form.querySelector('.franjas').classList.toggle('alerta',!ok);var av=document.getElementById('disp-aviso');av.classList.toggle('alerta',!ok);av.textContent=ok?av.dataset.base:'Ojo: con esas franjas no llegan al 60% de disponibilidad. Sumen alguna franja del sábado (o marquen solo el viernes completo).'});
+  function dispOk(vals){var sab=vals.filter(function(v){return v.indexOf('Sábado')===0}).length;return vals.some(function(v){return v.indexOf('Viernes')===0})||sab>=2}
+  form.addEventListener('change',function(e){if(e.target.name==='disp')err.hidden=true});
   function cats(id){return datos?datos.categorias.filter(function(c){return c.torneo===id}):[]}
   function pintar(){
     document.querySelectorAll('.torneo [data-insc]').forEach(function(btn){
       var card=btn.closest('.torneo'), id=card.dataset.id, cs=cats(id);
       var box=card.querySelector('.t-insc');
       if(!box){box=document.createElement('div');box.className='t-insc';box.style.cssText='display:grid;gap:10px';card.querySelector('.t-pie').before(box)}
-      if(!INSC_URL){box.innerHTML='<span class="t-estado off">Falta conectar la planilla</span>';btn.disabled=true;return}
+      if(!INSC_URL){box.innerHTML='<span class="t-estado off">Falta conectar la planilla</span>';btn.disabled=true;var gb0=card.querySelector('[data-gest]');if(gb0)gb0.hidden=true;return}
       if(!cs.length){box.innerHTML='<span class="t-estado off">Inscripción no disponible</span>';btn.hidden=true;return}
       var e=cs[0].estado, txt={abierta:'Inscripción abierta'+(cs[0].cierre?' · cierra '+f(cs[0].cierre):''),antes:'Abre '+f(cs[0].apertura),cerrada:'Inscripción cerrada',pronto:'La inscripción abre pronto'}[e];
       var h='<span class="t-estado'+(e==='abierta'?'':' off')+'">'+txt+'</span><div class="t-cats">';
@@ -525,6 +550,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
         h+='</details>'});
       box.innerHTML=h+'</div>';
       btn.disabled=e!=='abierta';btn.hidden=false;
+      var gb=card.querySelector('[data-gest]');if(gb){gb.hidden=e!=='abierta'||!cs.some(function(c){return c.inscriptos.length})}
       if(e==='antes'&&!pintar.t){var ms=new Date(cs[0].apertura+'-03:00')-Date.now()+1500;if(ms<6*36e5){pintar.t=setTimeout(function(){pintar.t=0;cargar()},Math.max(ms,1000))}}
     });
   }
@@ -537,8 +563,38 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
     if(b){var card=b.closest('.torneo');actual=card.dataset.id;
       document.getElementById('insc-tit').textContent=card.querySelector('h3').textContent;
       sel.innerHTML=cats(actual).map(function(c){return'<option>'+esc(c.categoria)+'</option>'}).join('');
-      form.reset();form.querySelector('.franjas').classList.remove('alerta');var av0=document.getElementById('disp-aviso');av0.classList.remove('alerta');av0.textContent=av0.dataset.base;err.hidden=true;form.hidden=false;res.hidden=true;dlg.showModal();return}
-    if(ev.target.closest('[data-cerrar]')){dlg.close()}
+      form.reset();err.hidden=true;form.hidden=false;res.hidden=true;dlg.showModal();return}
+    var g=ev.target.closest('[data-gest]');
+    if(g){var c2=g.closest('.torneo');actual=c2.dataset.id;
+      document.getElementById('gest-tit').textContent=c2.querySelector('h3').textContent;
+      gsel.innerHTML=cats(actual).map(function(c){return'<option>'+esc(c.categoria)+'</option>'}).join('');
+      gform.reset();gerr.hidden=true;gform.hidden=false;gres.hidden=true;gfr.hidden=false;gbtn.textContent='Guardar cambios';gdlg.showModal();return}
+    var cerr=ev.target.closest('[data-cerrar]');if(cerr){cerr.closest('dialog').close()}
+  });
+  var gdlg=document.getElementById('gest'),gform=document.getElementById('gest-form'),gres=document.getElementById('gest-res'),gerr=document.getElementById('gest-err'),gsel=document.getElementById('gest-cat'),gfr=document.getElementById('gest-franjas'),gbtn=document.getElementById('gest-enviar');
+  gform.addEventListener('change',function(e){gerr.hidden=true;if(e.target.name==='accion'){var baja=e.target.value==='baja';gfr.hidden=baja;gbtn.textContent=baja?'Darnos de baja':'Guardar cambios'}});
+  gform.addEventListener('submit',function(ev){
+    ev.preventDefault();gerr.hidden=true;
+    var fd=new FormData(gform);var d={torneo:actual,categoria:fd.get('categoria'),jugador:fd.get('jugador'),telefono:fd.get('telefono'),accion:fd.get('accion'),disponibilidad:fd.getAll('gdisp')};
+    if(String(d.jugador||'').trim().split(/\s+/).length<2){gerr.textContent='Poné apellido y nombre de uno de los jugadores.';gerr.hidden=false;return}
+    if(String(d.telefono).replace(/\D/g,'').length<8){gerr.textContent='Revisá el número de WhatsApp.';gerr.hidden=false;return}
+    if(d.accion==='disponibilidad'&&!dispOk(d.disponibilidad)){gerr.textContent='Elijan al menos dos franjas del sábado, o el viernes completo.';gerr.hidden=false;return}
+    if(d.accion==='baja'&&!gbtn.dataset.confirma){gbtn.dataset.confirma='1';gbtn.textContent='Sí, confirmar la baja';gerr.textContent='¿Seguro? La pareja deja su lugar y no se puede deshacer desde la página.';gerr.hidden=false;return}
+    delete gbtn.dataset.confirma;
+    var txt=gbtn.textContent;gbtn.disabled=true;gbtn.textContent='Enviando…';
+    fetch(INSC_URL,{method:'POST',body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){
+      if(j.ok){
+        gres.innerHTML=j.accion==='baja'
+          ?'<h3>Baja registrada</h3><p><b>'+esc(j.pareja)+'</b> ya no figura en '+esc(d.categoria)+'. Si había lista de espera, sube la pareja que sigue.</p>'
+          :'<h3>Horarios actualizados</h3><p><b>'+esc(j.pareja)+'</b></p><p>Nueva disponibilidad: '+esc(j.disponibilidad)+'</p>';
+        gres.innerHTML+='<div class="acciones"><button type="button" class="btn verde" data-cerrar>Cerrar</button></div>';
+        gform.hidden=true;gres.hidden=false;cargar();
+      }else{
+        var m={no_encontrado:'No encontramos una inscripción con ese jugador y ese WhatsApp en '+d.categoria+'. Revisá que sean los mismos datos que usaron al inscribirse.',franjas:'Elijan al menos dos franjas del sábado, o el viernes completo.',cerrada_gestion:'Ya pasó el plazo (martes 18 hs). Para cambios, escribile a la organización.',antes:'La inscripción todavía no abrió.',pronto:'La inscripción todavía no abrió.',datos:'Revisá los datos.',categoria:'Elegí una categoría.'}[j.error]||'No se pudo guardar. Probá de nuevo.';
+        gerr.textContent=m;gerr.hidden=false;
+      }
+    }).catch(function(){gerr.textContent='No se pudo conectar. Revisá la conexión y probá de nuevo.';gerr.hidden=false})
+    .finally(function(){gbtn.disabled=false;gbtn.textContent=gform.querySelector('[name=accion]:checked').value==='baja'?'Darnos de baja':'Guardar cambios'});
   });
   form.addEventListener('submit',function(ev){
     ev.preventDefault();err.hidden=true;
@@ -546,7 +602,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
     var palabras=function(x){return String(x||'').trim().split(/\s+/).filter(Boolean).length};
     if(palabras(d.jugador_1)<2||palabras(d.jugador_2)<2){err.textContent='Poné apellido y nombre de los dos jugadores.';err.hidden=false;return}
     if(String(d.telefono).replace(/\D/g,'').length<8){err.textContent='Revisá el número de WhatsApp.';err.hidden=false;return}
-    if(!d.disponibilidad.length){err.textContent='Marcá al menos una franja horaria.';err.hidden=false;return}
+    if(!dispOk(d.disponibilidad)){err.textContent='Elijan al menos dos franjas del sábado, o el viernes completo.';err.hidden=false;return}
     var btn=document.getElementById('insc-enviar');btn.disabled=true;btn.textContent='Enviando…';
     fetch(INSC_URL,{method:'POST',body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){
       if(j.ok){

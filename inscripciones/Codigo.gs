@@ -16,6 +16,8 @@ const H_TORNEOS = 'Torneos';
 const H_INSC = 'Inscripciones';
 const COLS_T = ['torneo', 'categoria', 'cupo', 'apertura', 'cierre'];
 const COLS_I = ['fecha_hora', 'torneo', 'categoria', 'jugador_1', 'jugador_2', 'telefono', 'estado', 'baja', 'disponibilidad'];
+/** Regla del circuito: al menos dos franjas del sábado, o el viernes completo. */
+function dispValida_(disp) { return disp.some((f) => f.indexOf('Viernes') === 0) || disp.filter((f) => f.indexOf('Sábado') === 0).length >= 2; }
 const FRANJAS = ['Viernes 14 a 00 hs', 'Sábado mañana 9 a 13 hs', 'Sábado siesta/tarde 13 a 18 hs', 'Sábado noche 18 a 00 hs'];
 
 /** Correr UNA vez a mano: crea las hojas con los torneos de noviembre. */
@@ -165,11 +167,12 @@ function doPost_(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'datos' }); }
   if (d.web) return json_({ ok: true, estado: 'Adentro' }); // campo trampa anti-robots
+  if (d.accion === 'baja' || d.accion === 'disponibilidad') return gestionar_(d);
 
   const j1 = limpio_(d.jugador_1), j2 = limpio_(d.jugador_2);
   const tel = String(d.telefono || '').replace(/[^\d+]/g, '').slice(0, 20);
   const disp = (Array.isArray(d.disponibilidad) ? d.disponibilidad : []).filter((f) => FRANJAS.includes(f));
-  if (j1.split(' ').length < 2 || j2.split(' ').length < 2 || tel.length < 8 || !disp.length) {
+  if (j1.split(' ').length < 2 || j2.split(' ').length < 2 || tel.length < 8 || !dispValida_(disp)) {
     return json_({ ok: false, error: 'datos' });
   }
 
@@ -204,6 +207,50 @@ function doPost_(e) {
       posicion: estado === 'Adentro' ? pos : pos - cupo,
       hora: Utilities.formatDate(ahora, TZ, 'dd/MM HH:mm:ss'),
     });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/* ---------- baja o cambio de disponibilidad, hecho por la propia pareja ---------- */
+
+function gestionar_(d) {
+  const jug = limpio_(d.jugador);
+  const tel = String(d.telefono || '').replace(/\D/g, '');
+  if (jug.split(' ').length < 2 || tel.length < 8) return json_({ ok: false, error: 'datos' });
+  let disp = [];
+  if (d.accion === 'disponibilidad') {
+    disp = (Array.isArray(d.disponibilidad) ? d.disponibilidad : []).filter((f) => FRANJAS.includes(f));
+    if (!dispValida_(disp)) return json_({ ok: false, error: 'franjas' });
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const ahora = new Date();
+    const t = leer_(H_TORNEOS).filas.find((x) => x.torneo === d.torneo && x.categoria === d.categoria);
+    if (!t) return json_({ ok: false, error: 'categoria' });
+    const v = estadoVentana_(t, ahora);
+    if (v !== 'abierta') return json_({ ok: false, error: v === 'cerrada' ? 'cerrada_gestion' : v });
+
+    asegurarColumnas_();
+    const { sh, filas } = leer_(H_INSC);
+    const n = norm_(jug), ult8 = tel.slice(-8);
+    const r = filas.find((x) => x.torneo === d.torneo && x.categoria === d.categoria && !String(x.baja).trim()
+      && [norm_(x.jugador_1), norm_(x.jugador_2)].includes(n)
+      && String(x.telefono).replace(/\D/g, '').slice(-8) === ult8);
+    if (!r) return json_({ ok: false, error: 'no_encontrado' });
+
+    const cuando = Utilities.formatDate(ahora, TZ, 'dd/MM HH:mm');
+    const pareja = r.jugador_1 + ' – ' + r.jugador_2;
+    if (d.accion === 'baja') {
+      sh.getRange(r._fila, COLS_I.indexOf('baja') + 1).setValue('x (web ' + cuando + ')');
+      SpreadsheetApp.flush();
+      recalcular_();
+      return json_({ ok: true, accion: 'baja', pareja });
+    }
+    const dispTxt = disp.length === FRANJAS.length ? 'Completa' : disp.join(' / ');
+    sh.getRange(r._fila, COLS_I.indexOf('disponibilidad') + 1).setValue(dispTxt);
+    return json_({ ok: true, accion: 'disponibilidad', pareja, disponibilidad: dispTxt });
   } finally {
     lock.releaseLock();
   }
