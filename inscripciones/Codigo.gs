@@ -14,7 +14,8 @@ const TZ = 'America/Argentina/Buenos_Aires';
 const H_TORNEOS = 'Torneos';
 const H_INSC = 'Inscripciones';
 const COLS_T = ['torneo', 'categoria', 'cupo', 'apertura', 'cierre'];
-const COLS_I = ['fecha_hora', 'torneo', 'categoria', 'jugador_1', 'jugador_2', 'telefono', 'estado', 'baja'];
+const COLS_I = ['fecha_hora', 'torneo', 'categoria', 'jugador_1', 'jugador_2', 'telefono', 'estado', 'baja', 'disponibilidad'];
+const FRANJAS = ['Viernes 14 a 00 hs', 'Sábado mañana 9 a 13 hs', 'Sábado siesta/tarde 13 a 18 hs', 'Sábado noche 18 a 00 hs'];
 
 /** Correr UNA vez a mano: crea las hojas con los torneos de noviembre. */
 function setup() {
@@ -113,6 +114,13 @@ function onEdit(e) {
   if (n === H_INSC || n === H_TORNEOS) recalcular_();
 }
 
+/** Agrega a la hoja de inscripciones las columnas nuevas que falten. */
+function asegurarColumnas_() {
+  const sh = SpreadsheetApp.getActive().getSheetByName(H_INSC);
+  const cab = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0];
+  COLS_I.forEach((c, k) => { if (cab[k] !== c) sh.getRange(1, k + 1).setValue(c).setFontWeight('bold').setBackground('#E6F2EB'); });
+}
+
 function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -159,7 +167,8 @@ function doPost_(e) {
 
   const j1 = limpio_(d.jugador_1), j2 = limpio_(d.jugador_2);
   const tel = String(d.telefono || '').replace(/[^\d+]/g, '').slice(0, 20);
-  if (j1.split(' ').length < 2 || j2.split(' ').length < 2 || tel.length < 8) {
+  const disp = (Array.isArray(d.disponibilidad) ? d.disponibilidad : []).filter((f) => FRANJAS.includes(f));
+  if (j1.split(' ').length < 2 || j2.split(' ').length < 2 || tel.length < 8 || !disp.length) {
     return json_({ ok: false, error: 'datos' });
   }
 
@@ -185,7 +194,9 @@ function doPost_(e) {
     const cupo = Number(t.cupo) || 0;
     const pos = misma.length + 1;
     const estado = cupo && pos > cupo ? 'Lista de espera' : 'Adentro';
-    sh.appendRow([ahora, d.torneo, d.categoria, j1, j2, "'" + tel, estado, '']);
+    asegurarColumnas_();
+    const dispTxt = disp.length === FRANJAS.length ? 'Completa' : disp.join(' / ');
+    sh.appendRow([ahora, d.torneo, d.categoria, j1, j2, "'" + tel, estado, '', dispTxt]);
     SpreadsheetApp.flush();
     return json_({
       ok: true, estado,

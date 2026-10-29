@@ -164,6 +164,13 @@ dialog.insc::backdrop{background:rgba(16,35,26,.55)}
 .insc .ayuda{font-size:13px;color:var(--tinta-2);font-weight:500}
 .insc .err{color:#B3261E;font-weight:700;font-size:14px}
 .insc .acciones{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.insc fieldset.franjas{border:1.5px solid var(--linea);border-radius:14px;padding:12px 14px 10px;margin:0;display:grid;gap:8px}
+.insc .franjas legend{font-weight:700;font-size:14px;padding:0 4px}
+.insc .franjas label{display:flex;align-items:center;gap:10px;font-weight:500;font-size:15px;cursor:pointer}
+.insc .franjas input{width:20px;height:20px;accent-color:var(--verde);flex:none;padding:0}
+.insc .franjas .ayuda{margin:2px 0 0;line-height:1.45}
+.insc .franjas.alerta{border-color:#C98A12}
+.insc #disp-aviso.alerta{color:#9A6B12;font-weight:700}
 .insc .trampa{position:absolute;left:-9999px}
 .insc .res p{color:var(--tinta-2)}
 .insc .res b.big{font-family:var(--display);font-size:28px;color:var(--verde)}
@@ -473,6 +480,14 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
     <label>Jugador/a 1<input name="jugador_1" autocomplete="off" placeholder="Apellido Nombre" required><span class="ayuda">Ej.: Acosta Axel</span></label>
     <label>Jugador/a 2<input name="jugador_2" autocomplete="off" placeholder="Apellido Nombre" required></label>
     <label>WhatsApp de contacto<input name="telefono" type="tel" inputmode="tel" placeholder="343 4xxxxxx" required><span class="ayuda">Solo lo ve la organización, no aparece en la lista.</span></label>
+    <fieldset class="franjas">
+      <legend>Disponibilidad horaria <span class="ayuda">(fase de zonas)</span></legend>
+      <label><input type="checkbox" name="disp" value="Viernes 14 a 00 hs" data-h="10"><span><b>Viernes</b> 14:00 a 00:00</span></label>
+      <label><input type="checkbox" name="disp" value="Sábado mañana 9 a 13 hs" data-h="4"><span><b>Sábado mañana</b> 9:00 a 13:00</span></label>
+      <label><input type="checkbox" name="disp" value="Sábado siesta/tarde 13 a 18 hs" data-h="5"><span><b>Sábado siesta/tarde</b> 13:00 a 18:00</span></label>
+      <label><input type="checkbox" name="disp" value="Sábado noche 18 a 00 hs" data-h="6"><span><b>Sábado noche</b> 18:00 a 00:00</span></label>
+      <p class="ayuda" id="disp-aviso">Marcá todas las franjas en las que pueden jugar. Los dos partidos de zona se juegan el mismo día. Mínimo 60% de disponibilidad; para pedir solo viernes tienen que poder toda la jornada. El domingo (llaves finales) no se piden horarios.</p>
+    </fieldset>
     <label class="trampa" aria-hidden="true">Web<input name="web" tabindex="-1" autocomplete="off"></label>
     <p class="err" id="insc-err" hidden></p>
     <div class="acciones"><button type="button" class="btn copiar" data-cerrar>Cancelar</button><button type="submit" class="btn verde" id="insc-enviar">Inscribirnos</button></div>
@@ -490,6 +505,9 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
   var dlg=document.getElementById('insc'), form=document.getElementById('insc-form'), res=document.getElementById('insc-res'), err=document.getElementById('insc-err'), sel=document.getElementById('insc-cat');
   function esc(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML}
   function f(iso){if(!iso)return'';var d=new Date(iso+'-03:00');return d.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'})+' '+d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+' hs'}
+  function dispOk(){var c=[].slice.call(form.querySelectorAll('[name=disp]:checked')),h=c.reduce(function(a,x){return a+(+x.dataset.h)},0);if(!c.length)return true;var soloVie=c.length===1&&c[0].value.indexOf('Viernes')===0;return soloVie||h>=15}
+  var avBase=document.getElementById('disp-aviso');avBase.dataset.base=avBase.textContent;
+  form.addEventListener('change',function(e){if(e.target.name!=='disp')return;err.hidden=true;var ok=dispOk();form.querySelector('.franjas').classList.toggle('alerta',!ok);var av=document.getElementById('disp-aviso');av.classList.toggle('alerta',!ok);av.textContent=ok?av.dataset.base:'Ojo: con esas franjas no llegan al 60% de disponibilidad. Sumen alguna franja del sábado (o marquen solo el viernes completo).'});
   function cats(id){return datos?datos.categorias.filter(function(c){return c.torneo===id}):[]}
   function pintar(){
     document.querySelectorAll('.torneo [data-insc]').forEach(function(btn){
@@ -519,15 +537,16 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
     if(b){var card=b.closest('.torneo');actual=card.dataset.id;
       document.getElementById('insc-tit').textContent=card.querySelector('h3').textContent;
       sel.innerHTML=cats(actual).map(function(c){return'<option>'+esc(c.categoria)+'</option>'}).join('');
-      form.reset();err.hidden=true;form.hidden=false;res.hidden=true;dlg.showModal();return}
+      form.reset();form.querySelector('.franjas').classList.remove('alerta');var av0=document.getElementById('disp-aviso');av0.classList.remove('alerta');av0.textContent=av0.dataset.base;err.hidden=true;form.hidden=false;res.hidden=true;dlg.showModal();return}
     if(ev.target.closest('[data-cerrar]')){dlg.close()}
   });
   form.addEventListener('submit',function(ev){
     ev.preventDefault();err.hidden=true;
-    var d=Object.fromEntries(new FormData(form));d.torneo=actual;
+    var fd=new FormData(form);var d=Object.fromEntries(fd);d.torneo=actual;delete d.disp;d.disponibilidad=fd.getAll('disp');
     var palabras=function(x){return String(x||'').trim().split(/\s+/).filter(Boolean).length};
     if(palabras(d.jugador_1)<2||palabras(d.jugador_2)<2){err.textContent='Poné apellido y nombre de los dos jugadores.';err.hidden=false;return}
     if(String(d.telefono).replace(/\D/g,'').length<8){err.textContent='Revisá el número de WhatsApp.';err.hidden=false;return}
+    if(!d.disponibilidad.length){err.textContent='Marcá al menos una franja horaria.';err.hidden=false;return}
     var btn=document.getElementById('insc-enviar');btn.disabled=true;btn.textContent='Enviando…';
     fetch(INSC_URL,{method:'POST',body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){
       if(j.ok){
