@@ -11,6 +11,10 @@
  * El estado (Adentro / Lista de espera) se recalcula solo.
  */
 
+/** ID de la planilla (lo que va entre /d/ y /edit en su link). Vacío = la planilla donde está pegado el script. */
+const SHEET_ID = '';
+function libro_() { return SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActive(); }
+
 const TZ = 'America/Argentina/Buenos_Aires';
 const H_TORNEOS = 'Torneos';
 const H_INSC = 'Inscripciones';
@@ -23,7 +27,7 @@ const FRANJAS = ['Viernes 14 a 00 hs', 'Sábado mañana 9 a 13 hs', 'Sábado sie
 
 /** Correr UNA vez a mano: crea las hojas con los torneos de noviembre. */
 function setup() {
-  const ss = SpreadsheetApp.getActive();
+  const ss = libro_();
   ss.setSpreadsheetTimeZone(TZ);
 
   let t = ss.getSheetByName(H_TORNEOS) || ss.insertSheet(H_TORNEOS);
@@ -60,6 +64,9 @@ function setup() {
     i.setFrozenRows(1);
     i.getRange(1, 1, 1, COLS_I.length).setFontWeight('bold').setBackground('#E6F2EB');
   }
+  if (SHEET_ID && !ScriptApp.getProjectTriggers().some((x) => x.getHandlerFunction() === 'alEditar')) {
+    ScriptApp.newTrigger('alEditar').forSpreadsheet(ss).onEdit().create();
+  }
   const hoja1 = ss.getSheetByName('Hoja 1') || ss.getSheetByName('Sheet1');
   if (hoja1 && hoja1.getLastRow() === 0 && ss.getSheets().length > 2) ss.deleteSheet(hoja1);
 }
@@ -67,7 +74,7 @@ function setup() {
 /* ---------- utilidades ---------- */
 
 function leer_(nombre) {
-  const sh = SpreadsheetApp.getActive().getSheetByName(nombre);
+  const sh = libro_().getSheetByName(nombre);
   const v = sh.getDataRange().getValues();
   const cab = v.shift();
   return { sh, filas: v.map((r, n) => { const o = { _fila: n + 2 }; cab.forEach((c, k) => (o[c] = r[k])); return o; }) };
@@ -113,6 +120,8 @@ function recalcular_() {
 }
 
 /** Se ejecuta solo cuando alguien edita la planilla a mano (por ejemplo, una baja). */
+function alEditar(e) { onEdit(e); }
+
 function onEdit(e) {
   const n = e && e.range && e.range.getSheet().getName();
   if (n === H_INSC || n === H_TORNEOS) recalcular_();
@@ -120,7 +129,7 @@ function onEdit(e) {
 
 /** Agrega a la hoja de inscripciones las columnas nuevas que falten. */
 function asegurarColumnas_() {
-  const sh = SpreadsheetApp.getActive().getSheetByName(H_INSC);
+  const sh = libro_().getSheetByName(H_INSC);
   const cab = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0];
   COLS_I.forEach((c, k) => { if (cab[k] !== c) sh.getRange(1, k + 1).setValue(c).setFontWeight('bold').setBackground('#E6F2EB'); });
 }
