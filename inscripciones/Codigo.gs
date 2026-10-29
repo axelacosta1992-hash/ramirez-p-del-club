@@ -6,6 +6,7 @@
  *   - "Torneos": una fila por torneo + categoría, con cupo, apertura y cierre.
  *   - "Inscripciones": se llena sola con cada pareja, con fecha y hora al segundo.
  *
+ * Inscripciones, bajas y cambios de disponibilidad: hasta el martes anterior al torneo, 18 hs.
  * Para dar de baja una pareja: escribí "x" en la columna "baja" de su fila.
  * El estado (Adentro / Lista de espera) se recalcula solo.
  */
@@ -29,18 +30,18 @@ function setup() {
     const filas = [
       ['prueba', 'Prueba Damas', 2, f('2026-10-29 11:30'), ''],
       ['prueba', 'Prueba Caballeros', 2, f('2026-10-29 11:30'), ''],
-      ['t-1315nov', 'Damas suma 13', 16, '', ''],
-      ['t-1315nov', 'Caballeros suma 11', 16, '', ''],
-      ['master-2022nov', '6° Damas', 12, '', ''],
-      ['master-2022nov', '5° Damas', 12, '', ''],
-      ['master-2022nov', '7° Caballeros', 12, '', ''],
-      ['master-2022nov', 'Suma 8 Caballeros', 12, '', ''],
-      ['8dam-2022nov', '8° Damas', 16, '', f('2026-11-10 18:00')],
-      ['master-2729nov', '7° Damas', 12, '', ''],
-      ['master-2729nov', 'Suma 9 Damas', 12, '', ''],
-      ['master-2729nov', '6° Caballeros', 12, '', ''],
-      ['master-2729nov', '5° Caballeros', 12, '', ''],
-      ['8cab-2729nov', '8° Caballeros', 16, '', f('2026-11-17 18:00')],
+      ['t-1315nov', 'Damas suma 13', 16, '', f('2026-11-10 18:00')],
+      ['t-1315nov', 'Caballeros suma 11', 16, '', f('2026-11-10 18:00')],
+      ['master-2022nov', '6° Damas', 12, '', f('2026-11-17 18:00')],
+      ['master-2022nov', '5° Damas', 12, '', f('2026-11-17 18:00')],
+      ['master-2022nov', '7° Caballeros', 12, '', f('2026-11-17 18:00')],
+      ['master-2022nov', 'Suma 8 Caballeros', 12, '', f('2026-11-17 18:00')],
+      ['8dam-2022nov', '8° Damas', 16, '', f('2026-11-17 18:00')],
+      ['master-2729nov', '7° Damas', 12, '', f('2026-11-24 18:00')],
+      ['master-2729nov', 'Suma 9 Damas', 12, '', f('2026-11-24 18:00')],
+      ['master-2729nov', '6° Caballeros', 12, '', f('2026-11-24 18:00')],
+      ['master-2729nov', '5° Caballeros', 12, '', f('2026-11-24 18:00')],
+      ['8cab-2729nov', '8° Caballeros', 16, '', f('2026-11-24 18:00')],
     ];
     t.getRange(2, 1, filas.length, COLS_T.length).setValues(filas);
     t.getRange('D:E').setNumberFormat('dd/mm/yyyy hh:mm');
