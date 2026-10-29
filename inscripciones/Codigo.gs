@@ -222,7 +222,7 @@ function doPost_(e) {
       ['Estado', estado === 'Adentro' ? 'Adentro · pareja n.º ' + posicion : 'Lista de espera · lugar ' + posicion],
       ['Registrada', hora + ' hs'], ['Disponibilidad', dispTxt],
     ], codigo, d, t);
-    return json_({ ok: true, estado, posicion, hora, email, enviado });
+    return json_({ ok: true, estado, posicion, hora, email, enviado, codigo });
   } finally {
     lock.releaseLock();
   }
@@ -260,12 +260,12 @@ function gestionar_(d) {
       sh.getRange(r._fila, COLS_I.indexOf('baja') + 1).setValue('x (web ' + cuando + ')');
       SpreadsheetApp.flush();
       recalcular_();
-      enviar_(email, 'Baja registrada · ' + r.categoria, [['Categoría', r.categoria], ['Pareja', pareja], ['Baja', cuando + ' hs']], '', d, t);
+      // Sin email: la baja se confirma en pantalla (ahorra cupo diario de Gmail).
       return json_({ ok: true, accion: 'baja', pareja, categoria: r.categoria });
     }
     const dispTxt = disp.length === FRANJAS.length ? 'Completa' : disp.join(' / ');
     sh.getRange(r._fila, COLS_I.indexOf('disponibilidad') + 1).setValue(dispTxt);
-    enviar_(email, 'Horarios actualizados · ' + r.categoria, [['Categoría', r.categoria], ['Pareja', pareja], ['Nueva disponibilidad', dispTxt]], r.codigo, d, t);
+    // Sin email: el cambio se confirma en pantalla (ahorra cupo diario de Gmail).
     return json_({ ok: true, accion: 'disponibilidad', pareja, categoria: r.categoria, disponibilidad: dispTxt });
   } finally {
     lock.releaseLock();

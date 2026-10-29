@@ -171,6 +171,11 @@ dialog.insc::backdrop{background:rgba(16,35,26,.55)}
 .insc .franjas .ayuda{margin:2px 0 0;line-height:1.45}
 .insc .franjas.alerta{border-color:#C98A12}
 .insc #disp-aviso.alerta{color:#9A6B12;font-weight:700}
+.insc .codigo{border:2px dashed var(--verde);border-radius:14px;padding:14px 16px;background:var(--hueso);display:grid;gap:4px}
+.insc .codigo span{font-size:13px;font-weight:700;color:var(--tinta-2)}
+.insc .codigo b{font:700 30px/1.1 ui-monospace,monospace;letter-spacing:6px;color:var(--verde)}
+.insc .codigo p{margin:4px 0 0;font-size:14px;color:var(--tinta-2)}
+.insc .codigo p b{font:700 14px var(--texto);letter-spacing:0;color:var(--tinta)}
 .insc .trampa{position:absolute;left:-9999px}
 .insc .res p{color:var(--tinta-2)}
 .insc .res b.big{font-family:var(--display);font-size:28px;color:var(--verde)}
@@ -598,7 +603,7 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
     fetch(INSC_URL,{method:'POST',body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){
       if(j.ok){
         gres.innerHTML=j.accion==='baja'
-          ?'<h3>Baja registrada</h3><p><b>'+esc(j.pareja)+'</b> ya no figura en '+esc(j.categoria)+'. Si había lista de espera, sube la pareja que sigue. Les mandamos un email con la confirmación.</p>'
+          ?'<h3>Baja registrada</h3><p><b>'+esc(j.pareja)+'</b> ya no figura en '+esc(j.categoria)+'. Si había lista de espera, sube la pareja que sigue.</p>'
           :'<h3>Horarios actualizados</h3><p><b>'+esc(j.pareja)+'</b></p><p>Nueva disponibilidad: '+esc(j.disponibilidad)+'</p>';
         gres.innerHTML+='<div class="acciones"><button type="button" class="btn verde" data-cerrar>Cerrar</button></div>';
         gform.hidden=true;gres.hidden=false;cargar();
@@ -622,8 +627,10 @@ footer img{width:42px;height:42px;border-radius:50%;background:var(--blanco);pad
     fetch(INSC_URL,{method:'POST',body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(j){
       if(j.ok){
         res.innerHTML=j.estado==='Adentro'
-          ?'<h3>¡Listo, quedaron inscriptos!</h3><b class="big">Pareja n.º '+j.posicion+'</b><p>'+esc(d.categoria)+' · registrada el '+esc(j.hora)+'</p><p>'+(j.enviado?'Te mandamos la confirmación y tu código a <b>'+esc(j.email)+'</b> (fijate también en spam).':'No pudimos mandar el email de confirmación; guardá esta pantalla.')+'</p>'
-          :'<h3>Quedaron en lista de espera</h3><b class="big">Lugar '+j.posicion+'</b><p>El cupo de '+esc(d.categoria)+' ya está completo. Si se libera un lugar, les avisamos por WhatsApp.</p>'+(j.enviado?'<p>Te mandamos el código a <b>'+esc(j.email)+'</b>.</p>':'');
+          ?'<h3>¡Listo, quedaron inscriptos!</h3><b class="big">Pareja n.º '+j.posicion+'</b><p>'+esc(d.categoria)+' · registrada el '+esc(j.hora)+'</p>'
+          :'<h3>Quedaron en lista de espera</h3><b class="big">Lugar '+j.posicion+'</b><p>El cupo de '+esc(d.categoria)+' ya está completo. Si se libera un lugar, les avisamos por WhatsApp.</p>';
+        if(j.codigo)res.innerHTML+='<div class="codigo"><span>Tu código</span><b>'+esc(j.codigo)+'</b><p><b>Guardalo o sacale una captura a esta pantalla.</b> Solo lo vas a necesitar si tienen que darse de baja o cambiar la disponibilidad horaria (hasta el martes anterior al torneo, 18 hs).</p></div>';
+        res.innerHTML+='<p>'+(j.enviado?'También te lo mandamos por email a <b>'+esc(j.email)+'</b> junto con todos los datos del torneo (fijate en spam si no lo ves).':'No pudimos mandar el email de confirmación, así que guardá este código.')+'</p>';
         res.innerHTML+='<div class="acciones"><button type="button" class="btn verde" data-cerrar>Cerrar</button></div>';
         form.hidden=true;res.hidden=false;cargar();
       }else{
