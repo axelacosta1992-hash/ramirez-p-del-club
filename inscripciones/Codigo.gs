@@ -144,6 +144,15 @@ function doGet() {
 /* ---------- lo que manda la página al inscribirse ---------- */
 
 function doPost(e) {
+  try {
+    return doPost_(e);
+  } catch (err) {
+    console.error(err);
+    return json_({ ok: false, error: 'interno', detalle: String(err) });
+  }
+}
+
+function doPost_(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'datos' }); }
   if (d.web) return json_({ ok: true, estado: 'Adentro' }); // campo trampa anti-robots
