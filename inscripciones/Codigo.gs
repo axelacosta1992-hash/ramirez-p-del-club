@@ -166,6 +166,7 @@ function doPost_(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
+    const ahora = new Date();
     const t = leer_(H_TORNEOS).filas.find((x) => x.torneo === d.torneo && x.categoria === d.categoria);
     if (!t) return json_({ ok: false, error: 'categoria' });
     const v = estadoVentana_(t, ahora);
