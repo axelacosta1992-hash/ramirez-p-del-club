@@ -1,0 +1,7 @@
+# La página se mudó a Cloudflare Pages (cuenta del complejo).
+# Netlify redirige todo a la dirección nueva. Cloudflare ignora este archivo.
+[[redirects]]
+  from = "/*"
+  to = "https://ramirezpadelclub.pages.dev/:splat"
+  status = 301
+  force = true
